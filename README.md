@@ -2,6 +2,11 @@
 
 Vue 3 + TypeScript + Element Plus frontend for the QS-AI Spring Boot 3.2.5 backend.
 
+## Related Repositories
+
+- Backend: https://github.com/senshiqin/QS-AI-ADMIAN
+- Default backend URL: `http://localhost:8080`
+
 ## Run
 
 ```powershell
