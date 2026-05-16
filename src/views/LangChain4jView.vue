@@ -279,12 +279,19 @@ const summaryItems = computed(() => {
       { label: '上下文 Token', value: current.contextTokens ?? '-' }
     ]
   }
+  if ('provider' in current) {
+    return [
+      { label: 'Provider', value: current.provider || '-' },
+      { label: '模型', value: current.model || '-' },
+      { label: '命中', value: current.hitCount ?? 0 },
+      { label: 'TopK', value: current.topK ?? '-' },
+      { label: 'MinScore', value: current.minScore ?? '-' }
+    ]
+  }
   return [
-    { label: 'Provider', value: current.provider || '-' },
     { label: '模型', value: current.model || '-' },
-    { label: '命中', value: current.hitCount ?? 0 },
-    { label: 'TopK', value: current.topK ?? '-' },
-    { label: 'MinScore', value: current.minScore ?? '-' }
+    { label: '输入 Token', value: current.promptTokens ?? '-' },
+    { label: '总 Token', value: current.totalTokens ?? '-' }
   ]
 })
 
