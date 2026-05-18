@@ -438,7 +438,7 @@ function clearEnhancedResult() {
 }
 
 function handleProviderChange() {
-  if (!form.model) fillDefaultModel(false)
+  fillDefaultModel(false)
 }
 
 function fillDefaultModel(showMessage = true) {
@@ -447,6 +447,7 @@ function fillDefaultModel(showMessage = true) {
     form.model = defaultModel
     return
   }
+  form.model = ''
   if (showMessage) ElMessage.info('当前供应商没有默认模型')
 }
 

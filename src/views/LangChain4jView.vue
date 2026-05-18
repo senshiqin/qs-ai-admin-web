@@ -362,7 +362,7 @@ async function run(task: () => Promise<void>) {
 }
 
 function handleProviderChange() {
-  if (!chainForm.model) fillDefaultModel(false)
+  fillDefaultModel(false)
 }
 
 function fillDefaultModel(showMessage = true) {
@@ -371,6 +371,7 @@ function fillDefaultModel(showMessage = true) {
     chainForm.model = defaultModel
     return
   }
+  chainForm.model = ''
   if (showMessage) ElMessage.info('当前供应商没有默认模型')
 }
 
