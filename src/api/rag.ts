@@ -29,6 +29,8 @@ export function retrieveRagAdvanced(payload: {
   provider?: string
   model?: string
   candidateTopK: number
+  searchMode: string
+  vectorWeight: number
 }) {
   return unwrap<RagAdvancedRetrieveResponse>(http.post('/api/v1/ai/rag/retrieve/advanced', payload))
 }
@@ -44,6 +46,8 @@ export function evaluateRag(payload: {
   rewriteWithLlm: boolean
   provider?: string
   model?: string
+  searchMode: string
+  vectorWeight: number
 }) {
   return unwrap<RagEvalResponse>(http.post('/api/v1/ai/rag/eval', payload))
 }

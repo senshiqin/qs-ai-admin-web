@@ -55,6 +55,14 @@
             <el-form-item v-if="mode === 'advanced'" label="Candidate TopK">
               <el-input-number v-model="form.candidateTopK" :min="form.topK" :max="100" />
             </el-form-item>
+            <template v-if="mode !== 'basic'">
+              <el-form-item label="Search Mode">
+                <el-segmented v-model="form.searchMode" :options="searchModeOptions" />
+              </el-form-item>
+              <el-form-item v-if="form.searchMode === 'HYBRID'" label="Vector Weight">
+                <el-slider v-model="form.vectorWeight" :min="0" :max="1" :step="0.05" show-input />
+              </el-form-item>
+            </template>
             <el-form-item label="Provider">
               <el-select
                 v-model="form.provider"
@@ -130,6 +138,10 @@
             <el-tab-pane label="回答" name="answer">
               <el-descriptions v-if="rewriteSummary.length || evalResult" :column="3" border class="rag-summary">
                 <el-descriptions-item label="知识库">{{ currentResultKbCode || form.kbCode }}</el-descriptions-item>
+                <el-descriptions-item v-if="currentSearchMode" label="检索模式">{{ currentSearchMode }}</el-descriptions-item>
+                <el-descriptions-item v-if="currentVectorWeight !== undefined" label="向量权重">
+                  {{ formatScore(currentVectorWeight) }}
+                </el-descriptions-item>
                 <el-descriptions-item v-for="item in rewriteSummary" :key="item.label" :label="item.label">
                   {{ item.value }}
                 </el-descriptions-item>
@@ -239,6 +251,11 @@ const modeOptions = [
   { label: '检索评估', value: 'eval' }
 ]
 
+const searchModeOptions = [
+  { label: 'Vector', value: 'VECTOR' },
+  { label: 'Hybrid', value: 'HYBRID' }
+]
+
 const form = reactive({
   kbCode: 'default',
   queryText: '请总结知识库里关于多模型动态配置的实现方式',
@@ -250,6 +267,8 @@ const form = reactive({
   rewrite: true,
   rewriteWithLlm: false,
   candidateTopK: 15,
+  searchMode: 'HYBRID',
+  vectorWeight: 0.75,
   expectedFileName: ''
 })
 
@@ -270,6 +289,10 @@ const contextText = computed(() => advancedResult.value?.ragContext || retrieval
 const currentResultKbCode = computed(
   () => retrieval.value?.kbCode || advancedResult.value?.kbCode || evalResult.value?.kbCode || ''
 )
+
+const currentSearchMode = computed(() => advancedResult.value?.searchMode || evalResult.value?.searchMode || '')
+
+const currentVectorWeight = computed(() => advancedResult.value?.vectorWeight ?? evalResult.value?.vectorWeight)
 
 const rewriteSummary = computed(() => {
   const result = advancedResult.value || evalResult.value || rewriteResult.value
@@ -345,7 +368,9 @@ async function retrieveAdvanced() {
       rewriteWithLlm: form.rewriteWithLlm,
       provider: form.provider,
       model: form.model,
-      candidateTopK: form.candidateTopK
+      candidateTopK: form.candidateTopK,
+      searchMode: form.searchMode,
+      vectorWeight: form.vectorWeight
     })
     advancedResult.value = response.data
     answer.value = `命中 ${response.data.hitCount} 个切片`
@@ -370,7 +395,9 @@ async function runEval() {
       rewrite: form.rewrite,
       rewriteWithLlm: form.rewriteWithLlm,
       provider: form.provider,
-      model: form.model
+      model: form.model,
+      searchMode: form.searchMode,
+      vectorWeight: form.vectorWeight
     })
     evalResult.value = response.data
     answer.value = response.data.passed

@@ -28,6 +28,14 @@
 - 页面只消费 API 模块，不直接写 `http.get/post`。
 - SSE 请求统一复用 `src/api/rag.ts` 的 `postSse`。
 
+## RAG 调试参数
+
+增强检索和检索评估页面支持：
+
+- `searchMode=VECTOR`：仅使用向量分。
+- `searchMode=HYBRID`：向量分和关键词分融合。
+- `vectorWeight`：HYBRID 模式下向量分权重，关键词权重为 `1 - vectorWeight`。
+
 ## 验收命令
 
 ```bash

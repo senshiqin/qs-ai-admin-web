@@ -175,6 +175,8 @@ export interface RagAdvancedRetrieveResponse {
   originalQuery: string
   rewrittenQuery: string
   kbCode: string
+  searchMode: string
+  vectorWeight: number
   rewriteUsed: boolean
   topK: number
   candidateTopK: number
@@ -188,6 +190,8 @@ export interface RagEvalResponse {
   queryText: string
   rewrittenQuery: string
   kbCode: string
+  searchMode: string
+  vectorWeight: number
   topK: number
   hitCount: number
   keywordRecall: number
