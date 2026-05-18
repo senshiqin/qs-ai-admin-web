@@ -17,6 +17,18 @@ npm run dev
 
 The Vite dev server proxies `/api` and `/health` to `http://localhost:8080`.
 
+## Engineering Quality
+
+- Frontend CI: `.github/workflows/ci.yml` runs `npm ci` and `npm run build`.
+- API map: [docs/API_MAP.md](docs/API_MAP.md)
+- Formatting baseline: `.editorconfig` and `.prettierrc.json`.
+
+Useful local commands:
+
+```bash
+npm run build
+```
+
 ## Pages
 
 - Login
