@@ -27,6 +27,9 @@ export interface DocumentItem {
   storagePath: string
   fileHash: string
   parseStatus: number
+  deleteStatus?: string
+  deleteErrorMessage?: string
+  version?: number
   chunkCount: number
   embeddingModel: string
   vectorIndexName: string
@@ -35,6 +38,26 @@ export interface DocumentItem {
   remark?: string
   createTime?: string
   updateTime?: string
+}
+
+export interface KnowledgeBase {
+  id: number
+  kbCode: string
+  name: string
+  description?: string
+  status: number
+  documentCount: number
+  createTime?: string
+  updateTime?: string
+}
+
+export interface DocumentDeleteResponse {
+  fileId: number
+  metadataDeleted: boolean
+  deletedVectorCount: number
+  physicalDeleted: boolean
+  deleteStatus?: string
+  deleteErrorMessage?: string
 }
 
 export interface DocumentPage {
@@ -80,6 +103,7 @@ export interface RagChunk {
 
 export interface RagRetrieveResponse {
   queryText: string
+  kbCode: string
   topK: number
   minScore: number
   embeddingModel: string
@@ -150,6 +174,7 @@ export interface RagRerankChunk {
 export interface RagAdvancedRetrieveResponse {
   originalQuery: string
   rewrittenQuery: string
+  kbCode: string
   rewriteUsed: boolean
   topK: number
   candidateTopK: number
@@ -162,6 +187,7 @@ export interface RagAdvancedRetrieveResponse {
 export interface RagEvalResponse {
   queryText: string
   rewrittenQuery: string
+  kbCode: string
   topK: number
   hitCount: number
   keywordRecall: number

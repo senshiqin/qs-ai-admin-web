@@ -6,7 +6,7 @@ import type {
   RagRewriteResponse
 } from '@/types/api'
 
-export function retrieveRag(payload: { queryText: string; topK: number; minScore: number }) {
+export function retrieveRag(payload: { queryText: string; kbCode?: string; topK: number; minScore: number }) {
   return unwrap<RagRetrieveResponse>(http.post('/api/v1/ai/rag/retrieve', payload))
 }
 
@@ -21,6 +21,7 @@ export function rewriteRagQuery(payload: {
 
 export function retrieveRagAdvanced(payload: {
   queryText: string
+  kbCode?: string
   topK: number
   minScore: number
   rewrite: boolean
@@ -34,6 +35,7 @@ export function retrieveRagAdvanced(payload: {
 
 export function evaluateRag(payload: {
   queryText: string
+  kbCode?: string
   expectedKeywords: string[]
   expectedFileName?: string
   topK: number
@@ -49,6 +51,7 @@ export function evaluateRag(payload: {
 export async function streamRagAnswer(
   payload: {
     queryText: string
+    kbCode?: string
     provider?: string
     model?: string
     temperature?: number

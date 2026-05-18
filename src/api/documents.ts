@@ -1,5 +1,5 @@
 import { http, unwrap } from './http'
-import type { BatchUploadResponse, DocumentItem, DocumentPage } from '@/types/api'
+import type { BatchUploadResponse, DocumentDeleteResponse, DocumentItem, DocumentPage, RagIngestResponse } from '@/types/api'
 
 export interface DocumentQuery {
   pageNo: number
@@ -21,7 +21,20 @@ export function getDocument(fileId: number) {
 }
 
 export function deleteDocument(fileId: number, deletePhysicalFile = false) {
-  return unwrap(http.delete(`/api/v1/ai/documents/${fileId}`, { params: { deletePhysicalFile } }))
+  return unwrap<DocumentDeleteResponse>(
+    http.delete(`/api/v1/ai/documents/${fileId}`, { params: { deletePhysicalFile } })
+  )
+}
+
+export function reingestDocument(
+  fileId: number,
+  payload: {
+    chunkSize: number
+    overlapRatio: number
+    async: boolean
+  }
+) {
+  return unwrap<RagIngestResponse>(http.post(`/api/v1/ai/documents/${fileId}/reingest`, null, { params: payload }))
 }
 
 export function batchUploadDocuments(payload: {

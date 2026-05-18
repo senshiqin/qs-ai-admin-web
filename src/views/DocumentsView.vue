@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">文档管理</h1>
-        <p class="page-subtitle">查询、批量上传、异步向量化和删除知识库文档</p>
+        <p class="page-subtitle">查询、批量上传、异步向量化、重入库和删除知识库文档。</p>
       </div>
       <div class="toolbar">
         <el-button :icon="Upload" type="primary" @click="uploadDialog = true">批量上传</el-button>
@@ -14,7 +14,15 @@
     <div class="panel">
       <el-form :model="query" inline>
         <el-form-item label="知识库">
-          <el-input v-model="query.kbCode" clearable placeholder="default" />
+          <el-select v-model="query.kbCode" clearable filterable placeholder="default" style="width: 180px">
+            <el-option
+              v-for="item in knowledgeBases"
+              :key="item.kbCode"
+              :label="`${item.name} (${item.kbCode})`"
+              :value="item.kbCode"
+              :disabled="item.status !== 1"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="文件名">
           <el-input v-model="query.fileName" clearable placeholder="关键词" />
@@ -27,7 +35,7 @@
             <el-option label="MD" value="md" />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item label="解析状态">
           <el-select v-model="query.parseStatus" clearable placeholder="全部" style="width: 130px">
             <el-option :value="0" label="待处理" />
             <el-option :value="1" label="处理中" />
@@ -60,12 +68,27 @@
           <template #default="{ row }">{{ formatFileSize(row.fileSize) }}</template>
         </el-table-column>
         <el-table-column prop="chunkCount" label="切片" width="90" />
-        <el-table-column label="状态" width="110">
+        <el-table-column label="解析状态" width="110">
           <template #default="{ row }">
             <el-tag :type="documentStatusType(row.parseStatus)" effect="plain">
               {{ documentStatusText(row.parseStatus) }}
             </el-tag>
           </template>
+        </el-table-column>
+        <el-table-column label="删除状态" width="120">
+          <template #default="{ row }">
+            <el-tooltip v-if="row.deleteErrorMessage" :content="row.deleteErrorMessage">
+              <el-tag :type="deleteStatusType(row.deleteStatus)" effect="plain">
+                {{ deleteStatusText(row.deleteStatus) }}
+              </el-tag>
+            </el-tooltip>
+            <el-tag v-else :type="deleteStatusType(row.deleteStatus)" effect="plain">
+              {{ deleteStatusText(row.deleteStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="版本" width="80">
+          <template #default="{ row }">v{{ row.version || 1 }}</template>
         </el-table-column>
         <el-table-column label="任务状态" width="120">
           <template #default="{ row }">
@@ -92,13 +115,13 @@
           <template #default="{ row }">{{ formatDuration(taskByFileId[row.id]?.durationMs) }}</template>
         </el-table-column>
         <el-table-column label="失败原因" min-width="160" show-overflow-tooltip>
-          <template #default="{ row }">{{ taskByFileId[row.id]?.errorMessage || '-' }}</template>
+          <template #default="{ row }">{{ row.deleteErrorMessage || taskByFileId[row.id]?.errorMessage || '-' }}</template>
         </el-table-column>
         <el-table-column prop="embeddingModel" label="Embedding" min-width="180" show-overflow-tooltip />
         <el-table-column label="创建时间" min-width="170">
           <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="210" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="showDetail(row.id)">详情</el-button>
             <el-button
@@ -109,6 +132,9 @@
               @click="retryTask(taskByFileId[row.id].id)"
             >
               重试
+            </el-button>
+            <el-button link type="success" :loading="reingestingFileId === row.id" @click="reingest(row.id)">
+              重新入库
             </el-button>
             <el-popconfirm title="确定删除该文档和向量吗？" @confirm="remove(row.id)">
               <template #reference>
@@ -134,7 +160,15 @@
     <el-dialog v-model="uploadDialog" title="批量上传文档" width="560px">
       <el-form label-width="92px">
         <el-form-item label="知识库">
-          <el-input v-model="uploadForm.kbCode" />
+          <el-select v-model="uploadForm.kbCode" filterable placeholder="default" style="width: 240px">
+            <el-option
+              v-for="item in knowledgeBases"
+              :key="item.kbCode"
+              :label="`${item.name} (${item.kbCode})`"
+              :value="item.kbCode"
+              :disabled="item.status !== 1"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="切片大小">
           <el-input-number v-model="uploadForm.chunkSize" :min="100" :step="100" />
@@ -195,11 +229,18 @@
           <el-descriptions-item label="大小">{{ formatFileSize(detail.fileSize) }}</el-descriptions-item>
           <el-descriptions-item label="文件 Hash">{{ detail.fileHash || '-' }}</el-descriptions-item>
           <el-descriptions-item label="路径">{{ detail.storagePath }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
+          <el-descriptions-item label="解析状态">
             <el-tag :type="documentStatusType(detail.parseStatus)" effect="plain">
               {{ documentStatusText(detail.parseStatus) }}
             </el-tag>
           </el-descriptions-item>
+          <el-descriptions-item label="删除状态">
+            <el-tag :type="deleteStatusType(detail.deleteStatus)" effect="plain">
+              {{ deleteStatusText(detail.deleteStatus) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="删除错误">{{ detail.deleteErrorMessage || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="版本">v{{ detail.version || 1 }}</el-descriptions-item>
           <el-descriptions-item label="切片数量">{{ detail.chunkCount }}</el-descriptions-item>
           <el-descriptions-item label="Embedding">{{ detail.embeddingModel || '-' }}</el-descriptions-item>
           <el-descriptions-item label="向量索引">{{ detail.vectorIndexName || '-' }}</el-descriptions-item>
@@ -220,9 +261,10 @@ import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search, Upload, UploadFilled } from '@element-plus/icons-vue'
-import { batchUploadDocuments, deleteDocument, getDocument, pageDocuments } from '@/api/documents'
+import { batchUploadDocuments, deleteDocument, getDocument, pageDocuments, reingestDocument } from '@/api/documents'
+import { listKnowledgeBases } from '@/api/knowledgeBase'
 import { getRagTask, pageRagTasks, retryRagTask } from '@/api/ragTasks'
-import type { DocumentItem, DocumentPage, RagIngestResponse, RagIngestTask, TaskStatus } from '@/types/api'
+import type { DocumentItem, DocumentPage, KnowledgeBase, RagIngestResponse, RagIngestTask, TaskStatus } from '@/types/api'
 import {
   documentStatusText,
   documentStatusType,
@@ -237,6 +279,7 @@ const loading = ref(false)
 const uploading = ref(false)
 const detailLoading = ref(false)
 const retryingTaskId = ref<number>()
+const reingestingFileId = ref<number>()
 const uploadDialog = ref(false)
 const uploadResultVisible = ref(false)
 const detailVisible = ref(false)
@@ -245,6 +288,7 @@ const uploadResults = ref<RagIngestResponse[]>([])
 const taskByFileId = ref<Record<number, RagIngestTask>>({})
 const fileList = ref<UploadUserFile[]>([])
 const createdRange = ref<[string, string] | []>([])
+const knowledgeBases = ref<KnowledgeBase[]>([])
 let taskPollTimer: ReturnType<typeof window.setInterval> | undefined
 
 const query = reactive({
@@ -270,6 +314,17 @@ const uploadForm = reactive({
   overlapRatio: 0.15,
   async: true
 })
+
+async function loadKnowledgeBases() {
+  const response = await listKnowledgeBases()
+  knowledgeBases.value = response.data
+  if (!knowledgeBases.value.some((item) => item.kbCode === query.kbCode)) {
+    query.kbCode = knowledgeBases.value[0]?.kbCode || 'default'
+  }
+  if (!knowledgeBases.value.some((item) => item.kbCode === uploadForm.kbCode)) {
+    uploadForm.kbCode = query.kbCode || knowledgeBases.value[0]?.kbCode || 'default'
+  }
+}
 
 async function load() {
   loading.value = true
@@ -338,9 +393,29 @@ async function showDetail(id: number) {
 }
 
 async function remove(id: number) {
-  await deleteDocument(id)
-  ElMessage.success('删除成功')
+  const response = await deleteDocument(id)
+  if (response.data.deleteStatus === 'DELETE_FAILED') {
+    ElMessage.warning(response.data.deleteErrorMessage || '向量删除失败，请稍后重试')
+  } else {
+    ElMessage.success('删除成功')
+  }
   await load()
+}
+
+async function reingest(id: number) {
+  reingestingFileId.value = id
+  try {
+    const response = await reingestDocument(id, {
+      chunkSize: uploadForm.chunkSize,
+      overlapRatio: uploadForm.overlapRatio,
+      async: true
+    })
+    ElMessage.success(`重入库任务已提交，taskId=${response.data.taskId || '-'}`)
+    if (response.data.taskId) await refreshTask(response.data.taskId)
+    await load()
+  } finally {
+    reingestingFileId.value = undefined
+  }
 }
 
 async function submitUpload() {
@@ -405,6 +480,23 @@ function taskProgressStatus(status?: TaskStatus) {
   return undefined
 }
 
+function deleteStatusText(status?: string) {
+  const map: Record<string, string> = {
+    ACTIVE: '正常',
+    DELETING: '删除中',
+    DELETED: '已删除',
+    DELETE_FAILED: '删除失败'
+  }
+  return map[status || 'ACTIVE'] || status || '正常'
+}
+
+function deleteStatusType(status?: string) {
+  if (status === 'DELETE_FAILED') return 'danger'
+  if (status === 'DELETING') return 'warning'
+  if (status === 'DELETED') return 'info'
+  return 'success'
+}
+
 function startTaskPolling() {
   stopTaskPolling()
   taskPollTimer = window.setInterval(async () => {
@@ -421,8 +513,9 @@ function stopTaskPolling() {
   taskPollTimer = undefined
 }
 
-onMounted(() => {
-  load()
+onMounted(async () => {
+  await loadKnowledgeBases()
+  await load()
   startTaskPolling()
 })
 

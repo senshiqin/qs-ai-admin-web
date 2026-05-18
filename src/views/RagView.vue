@@ -3,7 +3,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">RAG 调试</h1>
-        <p class="page-subtitle">检索知识切片、查看上下文，并测试流式问答</p>
+        <p class="page-subtitle">按知识库检索切片、查看来源上下文，并测试流式问答。</p>
       </div>
     </div>
 
@@ -13,6 +13,17 @@
           <el-form label-position="top">
             <el-form-item label="调试模式">
               <el-segmented v-model="mode" :options="modeOptions" />
+            </el-form-item>
+            <el-form-item label="知识库">
+              <el-select v-model="form.kbCode" filterable placeholder="default">
+                <el-option
+                  v-for="item in knowledgeBases"
+                  :key="item.kbCode"
+                  :label="`${item.name} (${item.kbCode})`"
+                  :value="item.kbCode"
+                  :disabled="item.status !== 1"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item label="问题">
               <el-input v-model="form.queryText" type="textarea" :rows="5" />
@@ -118,6 +129,7 @@
           <el-tabs v-model="activeTab">
             <el-tab-pane label="回答" name="answer">
               <el-descriptions v-if="rewriteSummary.length || evalResult" :column="3" border class="rag-summary">
+                <el-descriptions-item label="知识库">{{ currentResultKbCode || form.kbCode }}</el-descriptions-item>
                 <el-descriptions-item v-for="item in rewriteSummary" :key="item.label" :label="item.label">
                   {{ item.value }}
                 </el-descriptions-item>
@@ -140,6 +152,7 @@
             </el-tab-pane>
             <el-tab-pane label="命中切片" name="chunks">
               <el-table :data="chunkRows" height="420" empty-text="暂无命中切片">
+                <el-table-column prop="kbCode" label="知识库" width="100" />
                 <el-table-column label="Vector" width="90">
                   <template #default="{ row }">{{ formatScore(row.vectorScore ?? row.score) }}</template>
                 </el-table-column>
@@ -190,8 +203,10 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { EditPen, MagicStick, Search, VideoPlay } from '@element-plus/icons-vue'
+import { listKnowledgeBases } from '@/api/knowledgeBase'
 import { evaluateRag, retrieveRag, retrieveRagAdvanced, rewriteRagQuery, streamRagAnswer } from '@/api/rag'
 import type {
+  KnowledgeBase,
   RagAdvancedRetrieveResponse,
   RagChunk,
   RagEvalResponse,
@@ -215,13 +230,17 @@ const advancedResult = ref<RagAdvancedRetrieveResponse>()
 const rewriteResult = ref<RagRewriteResponse>()
 const evalResult = ref<RagEvalResponse>()
 const expectedKeywords = ref<string[]>(['Qwen', 'DeepSeek', 'Ollama', '模型路由'])
+const knowledgeBases = ref<KnowledgeBase[]>([])
 const { modelConfigLoading, providerOptions, loadModelConfigOptions, resolveDefaultModel } = useModelConfigOptions()
+
 const modeOptions = [
   { label: '基础检索', value: 'basic' },
   { label: '增强检索', value: 'advanced' },
   { label: '检索评估', value: 'eval' }
 ]
+
 const form = reactive({
+  kbCode: 'default',
   queryText: '请总结知识库里关于多模型动态配置的实现方式',
   topK: 5,
   minScore: 0.55,
@@ -248,6 +267,10 @@ const chunkRows = computed<Array<RagChunk | RagRerankChunk>>(() => {
 
 const contextText = computed(() => advancedResult.value?.ragContext || retrieval.value?.ragContext || '')
 
+const currentResultKbCode = computed(
+  () => retrieval.value?.kbCode || advancedResult.value?.kbCode || evalResult.value?.kbCode || ''
+)
+
 const rewriteSummary = computed(() => {
   const result = advancedResult.value || evalResult.value || rewriteResult.value
   if (!result) return []
@@ -260,6 +283,14 @@ const rewriteSummary = computed(() => {
   if ('llmUsed' in result) items.push({ label: 'LLM 改写', value: result.llmUsed ? '是' : '否' })
   return items
 })
+
+async function loadKnowledgeBases() {
+  const response = await listKnowledgeBases()
+  knowledgeBases.value = response.data
+  if (!knowledgeBases.value.some((item) => item.kbCode === form.kbCode)) {
+    form.kbCode = knowledgeBases.value[0]?.kbCode || 'default'
+  }
+}
 
 async function retrieve() {
   if (!validateQuery()) return
@@ -307,6 +338,7 @@ async function retrieveAdvanced() {
   try {
     const response = await retrieveRagAdvanced({
       queryText: form.queryText,
+      kbCode: form.kbCode,
       topK: form.topK,
       minScore: form.minScore,
       rewrite: form.rewrite,
@@ -330,6 +362,7 @@ async function runEval() {
   try {
     const response = await evaluateRag({
       queryText: form.queryText,
+      kbCode: form.kbCode,
       expectedKeywords: expectedKeywords.value,
       expectedFileName: form.expectedFileName || undefined,
       topK: form.topK,
@@ -363,6 +396,7 @@ async function askStream() {
           const chunks = data as RagChunk[]
           retrieval.value = {
             queryText: form.queryText,
+            kbCode: form.kbCode,
             topK: form.topK,
             minScore: form.minScore,
             embeddingModel: '',
@@ -426,10 +460,10 @@ function formatPercent(value?: number) {
 
 onMounted(async () => {
   try {
-    await loadModelConfigOptions()
+    await Promise.all([loadKnowledgeBases(), loadModelConfigOptions()])
     fillDefaultModel(false)
   } catch {
-    // HTTP interceptor already surfaces the backend error to the user.
+    // HTTP interceptor already surfaces backend errors to the user.
   }
 })
 </script>
