@@ -9,9 +9,12 @@ export interface ApiResponse<T> {
 export interface LoginResponse {
   userId: string
   username: string
+  roleCode?: string
   tokenType: string
   accessToken: string
   expiresInSeconds: number
+  refreshToken?: string
+  refreshExpiresInSeconds?: number
 }
 
 export interface HealthData {

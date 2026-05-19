@@ -9,3 +9,11 @@ export function login(username: string, password: string) {
     })
   )
 }
+
+export function refreshAccessToken(refreshToken: string) {
+  return unwrap<LoginResponse>(
+    http.post('/api/v1/user/refresh', {
+      refreshToken
+    })
+  )
+}

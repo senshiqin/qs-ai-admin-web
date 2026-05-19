@@ -55,7 +55,12 @@ async function submit() {
     const token = response.data.tokenType
       ? `${response.data.tokenType} ${response.data.accessToken}`
       : `Bearer ${response.data.accessToken}`
-    auth.setSession(token, response.data.username || form.username)
+    auth.setSession(
+      token,
+      response.data.username || form.username,
+      response.data.refreshToken,
+      response.data.roleCode
+    )
     ElMessage.success('登录成功')
     router.push('/dashboard')
   } finally {
