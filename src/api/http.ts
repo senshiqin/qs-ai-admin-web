@@ -28,6 +28,10 @@ http.interceptors.response.use(
     const body = response.data as ApiResponse<unknown>
     const traceId = body?.traceId || response.headers['x-trace-id']
     if (body && typeof body.code === 'number' && body.code !== 200) {
+      if (body.code === 403) {
+        redirectToForbidden(traceId)
+        return Promise.reject(body)
+      }
       if (
         body.code === 401 &&
         (await refreshAndRetry(response.config as RetriableConfig, body.code))
@@ -47,6 +51,10 @@ http.interceptors.response.use(
     const status = error?.response?.status
     const body = error?.response?.data as Partial<ApiResponse<unknown>> | undefined
     const traceId = body?.traceId || error?.response?.headers?.['x-trace-id']
+    if (status === 403) {
+      redirectToForbidden(traceId)
+      return Promise.reject(error)
+    }
     if (
       status === 401 &&
       (await refreshAndRetry(error.config as RetriableConfig, status))
@@ -70,6 +78,12 @@ export async function unwrap<T>(request: Promise<{ data: ApiResponse<T> }>): Pro
 function redirectToLogin() {
   if (router.currentRoute.value.path !== '/login') {
     router.push('/login')
+  }
+}
+
+function redirectToForbidden(traceId?: string) {
+  if (router.currentRoute.value.path !== '/forbidden') {
+    router.push({ path: '/forbidden', query: traceId ? { traceId } : undefined })
   }
 }
 

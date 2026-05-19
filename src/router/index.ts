@@ -13,6 +13,7 @@ import ContextView from '@/views/ContextView.vue'
 import RagTasksView from '@/views/RagTasksView.vue'
 import MonitorView from '@/views/MonitorView.vue'
 import UsersView from '@/views/UsersView.vue'
+import ForbiddenView from '@/views/ForbiddenView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -32,6 +33,7 @@ const router = createRouter({
         { path: 'context', component: ContextView, meta: { title: '上下文管理' } },
         { path: 'rag-tasks', component: RagTasksView, meta: { title: '任务中心' } },
         { path: 'monitor', component: MonitorView, meta: { title: '系统监控' } },
+        { path: 'forbidden', component: ForbiddenView, meta: { title: '权限不足' } },
         { path: 'users', component: UsersView, meta: { title: '用户管理', requiresAdmin: true } },
         { path: 'student', component: StudentView, meta: { title: '学生信息' } },
         { path: 'model-config', component: ModelConfigView, meta: { title: '模型配置' } }
@@ -46,7 +48,7 @@ router.beforeEach((to) => {
     return '/login'
   }
   if (to.meta.requiresAdmin && auth.roleCode !== 'ADMIN') {
-    return '/dashboard'
+    return '/forbidden'
   }
   if (to.path === '/login' && auth.isAuthed) {
     return '/dashboard'
