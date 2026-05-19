@@ -29,13 +29,13 @@ http.interceptors.response.use(
     const traceId = body?.traceId || response.headers['x-trace-id']
     if (body && typeof body.code === 'number' && body.code !== 200) {
       if (
-        (body.code === 401 || body.code === 403) &&
+        body.code === 401 &&
         (await refreshAndRetry(response.config as RetriableConfig, body.code))
       ) {
         return http.request(response.config)
       }
       ElMessage.error(formatErrorMessage(body.message || '请求失败', traceId))
-      if (body.code === 401 || body.code === 403) {
+      if (body.code === 401) {
         useAuthStore().clearSession()
         redirectToLogin()
       }
@@ -48,12 +48,12 @@ http.interceptors.response.use(
     const body = error?.response?.data as Partial<ApiResponse<unknown>> | undefined
     const traceId = body?.traceId || error?.response?.headers?.['x-trace-id']
     if (
-      (status === 401 || status === 403) &&
+      status === 401 &&
       (await refreshAndRetry(error.config as RetriableConfig, status))
     ) {
       return http.request(error.config)
     }
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       useAuthStore().clearSession()
       redirectToLogin()
     }

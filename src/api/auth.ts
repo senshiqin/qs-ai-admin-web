@@ -10,6 +10,15 @@ export function login(username: string, password: string) {
   )
 }
 
+export function register(payload: {
+  username: string
+  password: string
+  nickname?: string
+  email?: string
+}) {
+  return unwrap<LoginResponse>(http.post('/api/v1/user/register', payload))
+}
+
 export function refreshAccessToken(refreshToken: string) {
   return unwrap<LoginResponse>(
     http.post('/api/v1/user/refresh', {

@@ -45,6 +45,7 @@ npm run build
 ## Auth Session
 
 - Login uses `POST /api/v1/user/login`.
+- Register uses `POST /api/v1/user/register` and creates a normal `USER` account.
 - Login responses include `accessToken`, `refreshToken`, and `roleCode`.
 - `src/stores/auth.ts` stores the access token, refresh token, username, and role code in `localStorage`.
 - `src/api/http.ts` automatically calls `POST /api/v1/user/refresh` once when an API request receives HTTP/API `401`, then retries the original request.
