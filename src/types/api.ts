@@ -17,6 +17,30 @@ export interface LoginResponse {
   refreshExpiresInSeconds?: number
 }
 
+export type UserRoleCode = 'ADMIN' | 'USER' | 'VIEWER'
+
+export interface UserItem {
+  id: number
+  userNo: string
+  username: string
+  roleCode: UserRoleCode
+  nickname?: string
+  email?: string
+  status: number
+  userPoints: number
+  lastLoginTime?: string
+  createTime?: string
+  updateTime?: string
+}
+
+export interface UserPage {
+  pageNo: number
+  pageSize: number
+  total: number
+  pages: number
+  records: UserItem[]
+}
+
 export interface HealthData {
   status: string
 }

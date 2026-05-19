@@ -50,3 +50,4 @@ npm run build
 - `src/stores/auth.ts` stores the access token, refresh token, username, and role code in `localStorage`.
 - `src/api/http.ts` automatically calls `POST /api/v1/user/refresh` once when an API request receives HTTP/API `401`, then retries the original request.
 - If refresh fails, the frontend clears the session and redirects to login.
+- `src/views/UsersView.vue` uses `src/api/users.ts` to list users and update roles. The route is visible only for `ADMIN`.

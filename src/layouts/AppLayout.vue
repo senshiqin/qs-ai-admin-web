@@ -41,6 +41,10 @@
           <el-icon><Monitor /></el-icon>
           <span>系统监控</span>
         </el-menu-item>
+        <el-menu-item v-if="auth.roleCode === 'ADMIN'" index="/users">
+          <el-icon><UserFilled /></el-icon>
+          <span>用户管理</span>
+        </el-menu-item>
         <el-menu-item index="/student">
           <el-icon><User /></el-icon>
           <span>学生信息</span>
@@ -60,6 +64,7 @@
         </div>
         <div class="top-actions">
           <el-tag effect="plain">{{ auth.username || 'admin' }}</el-tag>
+          <el-tag v-if="auth.roleCode" effect="plain" type="info">{{ auth.roleCode }}</el-tag>
           <el-button :icon="SwitchButton" @click="logout">退出</el-button>
         </div>
       </el-header>
@@ -84,7 +89,8 @@ import {
   Setting,
   Share,
   SwitchButton,
-  User
+  User,
+  UserFilled
 } from '@element-plus/icons-vue'
 
 const auth = useAuthStore()
