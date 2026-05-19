@@ -130,7 +130,14 @@ async function refreshAccessTokenOnce(refreshToken: string) {
         const token = body.data.tokenType
           ? `${body.data.tokenType} ${body.data.accessToken}`
           : `Bearer ${body.data.accessToken}`
-        auth.setSession(token, body.data.username || auth.username, undefined, body.data.roleCode || auth.roleCode)
+        auth.setSession(
+          token,
+          body.data.username || auth.username,
+          undefined,
+          body.data.roleCode || auth.roleCode,
+          body.data.roleCodes || auth.roleCodes,
+          body.data.permissions || auth.permissions
+        )
         return token
       })
       .finally(() => {

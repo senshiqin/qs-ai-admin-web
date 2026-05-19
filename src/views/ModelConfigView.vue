@@ -7,7 +7,7 @@
       </div>
       <div class="toolbar">
         <el-button :icon="Refresh" :loading="loading" @click="load">刷新</el-button>
-        <el-button type="primary" :icon="Switch" :loading="refreshing" @click="refreshConfig">
+        <el-button v-if="canRefresh" type="primary" :icon="Switch" :loading="refreshing" @click="refreshConfig">
           后端热刷新
         </el-button>
       </div>
@@ -104,10 +104,13 @@ import { Refresh, Switch } from '@element-plus/icons-vue'
 import { getModelConfig, refreshModelConfig } from '@/api/modelConfig'
 import type { ModelConfigResponse } from '@/types/api'
 import { formatDateTime, formatDuration } from '@/utils/document'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const loading = ref(false)
 const refreshing = ref(false)
 const config = ref<ModelConfigResponse>()
+const canRefresh = computed(() => auth.hasPermission('model-config:refresh'))
 const routes = computed(() =>
   Object.entries(config.value?.modelPrefixRoutes || {}).map(([prefix, provider]) => ({
     prefix,

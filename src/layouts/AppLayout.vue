@@ -9,39 +9,39 @@
         </div>
       </div>
       <el-menu :default-active="$route.path" router class="nav-menu">
-        <el-menu-item index="/dashboard">
+        <el-menu-item v-if="can('dashboard:view')" index="/dashboard">
           <el-icon><DataBoard /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/documents">
+        <el-menu-item v-if="can('document:view')" index="/documents">
           <el-icon><Files /></el-icon>
           <span>文档管理</span>
         </el-menu-item>
-        <el-menu-item index="/rag-tasks">
+        <el-menu-item v-if="can('document:view')" index="/rag-tasks">
           <el-icon><Operation /></el-icon>
           <span>任务中心</span>
         </el-menu-item>
-        <el-menu-item index="/rag">
+        <el-menu-item v-if="can('rag:debug')" index="/rag">
           <el-icon><Search /></el-icon>
           <span>RAG 问答</span>
         </el-menu-item>
-        <el-menu-item index="/chat">
+        <el-menu-item v-if="can('chat:use')" index="/chat">
           <el-icon><ChatDotRound /></el-icon>
           <span>AI 聊天</span>
         </el-menu-item>
-        <el-menu-item index="/langchain4j">
+        <el-menu-item v-if="can('rag:debug')" index="/langchain4j">
           <el-icon><Share /></el-icon>
           <span>LangChain4j</span>
         </el-menu-item>
-        <el-menu-item index="/context">
+        <el-menu-item v-if="can('chat:use')" index="/context">
           <el-icon><Clock /></el-icon>
           <span>上下文管理</span>
         </el-menu-item>
-        <el-menu-item index="/monitor">
+        <el-menu-item v-if="can('monitor:view')" index="/monitor">
           <el-icon><Monitor /></el-icon>
           <span>系统监控</span>
         </el-menu-item>
-        <el-menu-item v-if="auth.roleCode === 'ADMIN'" index="/users">
+        <el-menu-item v-if="can('admin:user-manage')" index="/users">
           <el-icon><UserFilled /></el-icon>
           <span>用户管理</span>
         </el-menu-item>
@@ -49,7 +49,7 @@
           <el-icon><User /></el-icon>
           <span>学生信息</span>
         </el-menu-item>
-        <el-menu-item index="/model-config">
+        <el-menu-item v-if="can('model-config:view')" index="/model-config">
           <el-icon><Setting /></el-icon>
           <span>模型配置</span>
         </el-menu-item>
@@ -95,6 +95,10 @@ import {
 
 const auth = useAuthStore()
 const router = useRouter()
+
+function can(permission: string) {
+  return auth.hasPermission(permission)
+}
 
 function logout() {
   auth.clearSession()

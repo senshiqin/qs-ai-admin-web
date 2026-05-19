@@ -25,18 +25,18 @@ const router = createRouter({
       redirect: '/dashboard',
       meta: { requiresAuth: true },
       children: [
-        { path: 'dashboard', component: DashboardView, meta: { title: '仪表盘' } },
-        { path: 'documents', component: DocumentsView, meta: { title: '文档管理' } },
-        { path: 'rag', component: RagView, meta: { title: 'RAG 调试' } },
-        { path: 'chat', component: ChatView, meta: { title: 'AI 聊天' } },
-        { path: 'langchain4j', component: LangChain4jView, meta: { title: 'LangChain4j 调试' } },
-        { path: 'context', component: ContextView, meta: { title: '上下文管理' } },
-        { path: 'rag-tasks', component: RagTasksView, meta: { title: '任务中心' } },
-        { path: 'monitor', component: MonitorView, meta: { title: '系统监控' } },
+        { path: 'dashboard', component: DashboardView, meta: { title: '仪表盘', permission: 'dashboard:view' } },
+        { path: 'documents', component: DocumentsView, meta: { title: '文档管理', permission: 'document:view' } },
+        { path: 'rag', component: RagView, meta: { title: 'RAG 调试', permission: 'rag:debug' } },
+        { path: 'chat', component: ChatView, meta: { title: 'AI 聊天', permission: 'chat:use' } },
+        { path: 'langchain4j', component: LangChain4jView, meta: { title: 'LangChain4j 调试', permission: 'rag:debug' } },
+        { path: 'context', component: ContextView, meta: { title: '上下文管理', permission: 'chat:use' } },
+        { path: 'rag-tasks', component: RagTasksView, meta: { title: '任务中心', permission: 'document:view' } },
+        { path: 'monitor', component: MonitorView, meta: { title: '系统监控', permission: 'monitor:view' } },
         { path: 'forbidden', component: ForbiddenView, meta: { title: '权限不足' } },
-        { path: 'users', component: UsersView, meta: { title: '用户管理', requiresAdmin: true } },
+        { path: 'users', component: UsersView, meta: { title: '用户管理', permission: 'admin:user-manage' } },
         { path: 'student', component: StudentView, meta: { title: '学生信息' } },
-        { path: 'model-config', component: ModelConfigView, meta: { title: '模型配置' } }
+        { path: 'model-config', component: ModelConfigView, meta: { title: '模型配置', permission: 'model-config:view' } }
       ]
     }
   ]
@@ -47,7 +47,8 @@ router.beforeEach((to) => {
   if (to.meta.requiresAuth && !auth.isAuthed) {
     return '/login'
   }
-  if (to.meta.requiresAdmin && auth.roleCode !== 'ADMIN') {
+  const permission = to.meta.permission
+  if (typeof permission === 'string' && !auth.hasPermission(permission)) {
     return '/forbidden'
   }
   if (to.path === '/login' && auth.isAuthed) {

@@ -10,6 +10,8 @@ export interface LoginResponse {
   userId: string
   username: string
   roleCode?: string
+  roleCodes?: string[]
+  permissions?: string[]
   tokenType: string
   accessToken: string
   expiresInSeconds: number
@@ -24,6 +26,7 @@ export interface UserItem {
   userNo: string
   username: string
   roleCode: UserRoleCode
+  permissions?: string[]
   nickname?: string
   email?: string
   status: number

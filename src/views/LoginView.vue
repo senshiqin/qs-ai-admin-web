@@ -131,7 +131,14 @@ async function submit() {
 
 function saveSession(data: LoginResponse) {
   const token = data.tokenType ? `${data.tokenType} ${data.accessToken}` : `Bearer ${data.accessToken}`
-  auth.setSession(token, data.username || form.username, data.refreshToken, data.roleCode)
+  auth.setSession(
+    token,
+    data.username || form.username,
+    data.refreshToken,
+    data.roleCode,
+    data.roleCodes,
+    data.permissions
+  )
 }
 </script>
 

@@ -6,7 +6,7 @@
         <p class="page-subtitle">查询、批量上传、异步向量化、重入库和删除知识库文档。</p>
       </div>
       <div class="toolbar">
-        <el-button :icon="Upload" type="primary" @click="uploadDialog = true">批量上传</el-button>
+        <el-button v-if="canUpload" :icon="Upload" type="primary" @click="uploadDialog = true">批量上传</el-button>
         <el-button :icon="Refresh" @click="load">刷新</el-button>
       </div>
     </div>
@@ -125,7 +125,7 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="showDetail(row.id)">详情</el-button>
             <el-button
-              v-if="taskByFileId[row.id]?.status === 'FAILED'"
+              v-if="canUpload && taskByFileId[row.id]?.status === 'FAILED'"
               link
               type="warning"
               :loading="retryingTaskId === taskByFileId[row.id]?.id"
@@ -133,10 +133,10 @@
             >
               重试
             </el-button>
-            <el-button link type="success" :loading="reingestingFileId === row.id" @click="reingest(row.id)">
+            <el-button v-if="canUpload" link type="success" :loading="reingestingFileId === row.id" @click="reingest(row.id)">
               重新入库
             </el-button>
-            <el-popconfirm title="确定删除该文档和向量吗？" @confirm="remove(row.id)">
+            <el-popconfirm v-if="canDelete" title="确定删除该文档和向量吗？" @confirm="remove(row.id)">
               <template #reference>
                 <el-button link type="danger">删除</el-button>
               </template>
@@ -257,7 +257,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import type { UploadUserFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search, Upload, UploadFilled } from '@element-plus/icons-vue'
@@ -274,7 +274,9 @@ import {
   taskStatusText,
   taskStatusType
 } from '@/utils/document'
+import { useAuthStore } from '@/stores/auth'
 
+const auth = useAuthStore()
 const loading = ref(false)
 const uploading = ref(false)
 const detailLoading = ref(false)
@@ -290,6 +292,8 @@ const fileList = ref<UploadUserFile[]>([])
 const createdRange = ref<[string, string] | []>([])
 const knowledgeBases = ref<KnowledgeBase[]>([])
 let taskPollTimer: ReturnType<typeof window.setInterval> | undefined
+const canUpload = computed(() => auth.hasPermission('document:upload'))
+const canDelete = computed(() => auth.hasPermission('document:delete'))
 
 const query = reactive({
   pageNo: 1,
